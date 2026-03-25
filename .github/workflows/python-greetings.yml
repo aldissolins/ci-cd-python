@@ -57,7 +57,16 @@ jobs:
       - name: Stop old dev app
         shell: cmd
         run: |
-          pm2 delete greetings-app-dev >nul 2>&1 || exit /b 0
+          pm2 delete greetings-app-dev >nul 2>&1
+          exit /b 0
+
+      - name: Create dev python runner
+        shell: cmd
+        run: |
+          (
+            echo from app import app
+            echo app.run(host="127.0.0.1", port=7001, debug=False, use_reloader=False)
+          ) > "%GITHUB_WORKSPACE%\python-greetings\run_dev.py"
 
       - name: Create dev start script
         shell: cmd
@@ -66,7 +75,7 @@ jobs:
           (
             echo @echo off
             echo cd /d "%GITHUB_WORKSPACE%\python-greetings"
-            echo py -c "from app import app; app.run(host='127.0.0.1', port=7001, debug=False, use_reloader=False)"
+            echo py run_dev.py
           ) > "%USERPROFILE%\pm2-scripts\run-dev.bat"
 
       - name: Start dev app
@@ -77,13 +86,18 @@ jobs:
       - name: Wait for dev app
         shell: cmd
         run: |
-          powershell -Command "$ok=$false; for($i=0; $i -lt 15; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7001/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
+          powershell -Command "$ok=$false; for($i=0; $i -lt 20; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7001/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
 
       - name: Show dev logs on failure
         if: failure()
         shell: cmd
         run: |
-          pm2 logs greetings-app-dev --lines 50 --nostream
+          echo ===== PM2 DESCRIBE =====
+          pm2 describe greetings-app-dev
+          echo ===== PM2 ERROR LOG =====
+          if exist "%USERPROFILE%\.pm2\logs\greetings-app-dev-error.log" type "%USERPROFILE%\.pm2\logs\greetings-app-dev-error.log"
+          echo ===== PM2 OUT LOG =====
+          if exist "%USERPROFILE%\.pm2\logs\greetings-app-dev-out.log" type "%USERPROFILE%\.pm2\logs\greetings-app-dev-out.log"
 
   tests-on-dev:
     runs-on: self-hosted
@@ -142,7 +156,16 @@ jobs:
       - name: Stop old stg app
         shell: cmd
         run: |
-          pm2 delete greetings-app-stg >nul 2>&1 || exit /b 0
+          pm2 delete greetings-app-stg >nul 2>&1
+          exit /b 0
+
+      - name: Create stg python runner
+        shell: cmd
+        run: |
+          (
+            echo from app import app
+            echo app.run(host="127.0.0.1", port=7002, debug=False, use_reloader=False)
+          ) > "%GITHUB_WORKSPACE%\python-greetings\run_stg.py"
 
       - name: Create stg start script
         shell: cmd
@@ -151,7 +174,7 @@ jobs:
           (
             echo @echo off
             echo cd /d "%GITHUB_WORKSPACE%\python-greetings"
-            echo py -c "from app import app; app.run(host='127.0.0.1', port=7002, debug=False, use_reloader=False)"
+            echo py run_stg.py
           ) > "%USERPROFILE%\pm2-scripts\run-stg.bat"
 
       - name: Start stg app
@@ -162,13 +185,18 @@ jobs:
       - name: Wait for stg app
         shell: cmd
         run: |
-          powershell -Command "$ok=$false; for($i=0; $i -lt 15; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7002/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
+          powershell -Command "$ok=$false; for($i=0; $i -lt 20; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7002/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
 
       - name: Show stg logs on failure
         if: failure()
         shell: cmd
         run: |
-          pm2 logs greetings-app-stg --lines 50 --nostream
+          echo ===== PM2 DESCRIBE =====
+          pm2 describe greetings-app-stg
+          echo ===== PM2 ERROR LOG =====
+          if exist "%USERPROFILE%\.pm2\logs\greetings-app-stg-error.log" type "%USERPROFILE%\.pm2\logs\greetings-app-stg-error.log"
+          echo ===== PM2 OUT LOG =====
+          if exist "%USERPROFILE%\.pm2\logs\greetings-app-stg-out.log" type "%USERPROFILE%\.pm2\logs\greetings-app-stg-out.log"
 
   tests-on-stg:
     runs-on: self-hosted
@@ -227,7 +255,16 @@ jobs:
       - name: Stop old preprod app
         shell: cmd
         run: |
-          pm2 delete greetings-app-preprod >nul 2>&1 || exit /b 0
+          pm2 delete greetings-app-preprod >nul 2>&1
+          exit /b 0
+
+      - name: Create preprod python runner
+        shell: cmd
+        run: |
+          (
+            echo from app import app
+            echo app.run(host="127.0.0.1", port=7003, debug=False, use_reloader=False)
+          ) > "%GITHUB_WORKSPACE%\python-greetings\run_preprod.py"
 
       - name: Create preprod start script
         shell: cmd
@@ -236,7 +273,7 @@ jobs:
           (
             echo @echo off
             echo cd /d "%GITHUB_WORKSPACE%\python-greetings"
-            echo py -c "from app import app; app.run(host='127.0.0.1', port=7003, debug=False, use_reloader=False)"
+            echo py run_preprod.py
           ) > "%USERPROFILE%\pm2-scripts\run-preprod.bat"
 
       - name: Start preprod app
@@ -247,13 +284,18 @@ jobs:
       - name: Wait for preprod app
         shell: cmd
         run: |
-          powershell -Command "$ok=$false; for($i=0; $i -lt 15; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7003/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
+          powershell -Command "$ok=$false; for($i=0; $i -lt 20; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7003/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
 
       - name: Show preprod logs on failure
         if: failure()
         shell: cmd
         run: |
-          pm2 logs greetings-app-preprod --lines 50 --nostream
+          echo ===== PM2 DESCRIBE =====
+          pm2 describe greetings-app-preprod
+          echo ===== PM2 ERROR LOG =====
+          if exist "%USERPROFILE%\.pm2\logs\greetings-app-preprod-error.log" type "%USERPROFILE%\.pm2\logs\greetings-app-preprod-error.log"
+          echo ===== PM2 OUT LOG =====
+          if exist "%USERPROFILE%\.pm2\logs\greetings-app-preprod-out.log" type "%USERPROFILE%\.pm2\logs\greetings-app-preprod-out.log"
 
   tests-on-preprod:
     runs-on: self-hosted
@@ -312,7 +354,16 @@ jobs:
       - name: Stop old prod app
         shell: cmd
         run: |
-          pm2 delete greetings-app-prod >nul 2>&1 || exit /b 0
+          pm2 delete greetings-app-prod >nul 2>&1
+          exit /b 0
+
+      - name: Create prod python runner
+        shell: cmd
+        run: |
+          (
+            echo from app import app
+            echo app.run(host="127.0.0.1", port=7004, debug=False, use_reloader=False)
+          ) > "%GITHUB_WORKSPACE%\python-greetings\run_prod.py"
 
       - name: Create prod start script
         shell: cmd
@@ -321,7 +372,7 @@ jobs:
           (
             echo @echo off
             echo cd /d "%GITHUB_WORKSPACE%\python-greetings"
-            echo py -c "from app import app; app.run(host='127.0.0.1', port=7004, debug=False, use_reloader=False)"
+            echo py run_prod.py
           ) > "%USERPROFILE%\pm2-scripts\run-prod.bat"
 
       - name: Start prod app
@@ -332,13 +383,18 @@ jobs:
       - name: Wait for prod app
         shell: cmd
         run: |
-          powershell -Command "$ok=$false; for($i=0; $i -lt 15; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7004/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
+          powershell -Command "$ok=$false; for($i=0; $i -lt 20; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7004/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
 
       - name: Show prod logs on failure
         if: failure()
         shell: cmd
         run: |
-          pm2 logs greetings-app-prod --lines 50 --nostream
+          echo ===== PM2 DESCRIBE =====
+          pm2 describe greetings-app-prod
+          echo ===== PM2 ERROR LOG =====
+          if exist "%USERPROFILE%\.pm2\logs\greetings-app-prod-error.log" type "%USERPROFILE%\.pm2\logs\greetings-app-prod-error.log"
+          echo ===== PM2 OUT LOG =====
+          if exist "%USERPROFILE%\.pm2\logs\greetings-app-prod-out.log" type "%USERPROFILE%\.pm2\logs\greetings-app-prod-out.log"
 
   tests-on-prod:
     runs-on: self-hosted
