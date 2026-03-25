@@ -19,16 +19,11 @@ jobs:
           repository: mtararujs/python-greetings
           path: python-greetings
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
+      - name: Install Python dependencies
         working-directory: python-greetings
         run: |
-          python -m venv venv
-          venv\Scripts\pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
   deploy-to-dev:
     runs-on: self-hosted
@@ -45,8 +40,10 @@ jobs:
           path: python-greetings
 
       - name: Stop existing dev app
+        shell: powershell
         run: |
-          pm2 delete greetings-app-dev || exit 0
+          pm2 delete greetings-app-dev
+          if ($LASTEXITCODE -ne 0) { exit 0 }
 
       - name: Deploy to dev
         working-directory: python-greetings
@@ -75,7 +72,7 @@ jobs:
       - name: Run tests for dev
         working-directory: course-js-api-framework
         run: |
-          npm run greetings_dev
+          npm run greetings greetings_dev
 
   deploy-to-stg:
     runs-on: self-hosted
@@ -92,8 +89,10 @@ jobs:
           path: python-greetings
 
       - name: Stop existing stg app
+        shell: powershell
         run: |
-          pm2 delete greetings-app-stg || exit 0
+          pm2 delete greetings-app-stg
+          if ($LASTEXITCODE -ne 0) { exit 0 }
 
       - name: Deploy to stg
         working-directory: python-greetings
@@ -122,7 +121,7 @@ jobs:
       - name: Run tests for stg
         working-directory: course-js-api-framework
         run: |
-          npm run greetings_stg
+          npm run greetings greetings_stg
 
   deploy-to-preprod:
     runs-on: self-hosted
@@ -139,8 +138,10 @@ jobs:
           path: python-greetings
 
       - name: Stop existing preprod app
+        shell: powershell
         run: |
-          pm2 delete greetings-app-preprod || exit 0
+          pm2 delete greetings-app-preprod
+          if ($LASTEXITCODE -ne 0) { exit 0 }
 
       - name: Deploy to preprod
         working-directory: python-greetings
@@ -169,7 +170,7 @@ jobs:
       - name: Run tests for preprod
         working-directory: course-js-api-framework
         run: |
-          npm run greetings_preprod
+          npm run greetings greetings_preprod
 
   deploy-to-prod:
     runs-on: self-hosted
@@ -186,8 +187,10 @@ jobs:
           path: python-greetings
 
       - name: Stop existing prod app
+        shell: powershell
         run: |
-          pm2 delete greetings-app-prod || exit 0
+          pm2 delete greetings-app-prod
+          if ($LASTEXITCODE -ne 0) { exit 0 }
 
       - name: Deploy to prod
         working-directory: python-greetings
