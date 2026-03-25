@@ -9,12 +9,22 @@ jobs:
   install-pip-deps:
     runs-on: self-hosted
     steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v6
+        with:
+          clean: false
+
       - uses: ./.github/actions/setup-python-greetings
 
   deploy-to-dev:
     runs-on: self-hosted
     needs: install-pip-deps
     steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v6
+        with:
+          clean: false
+
       - uses: ./.github/actions/deploy-python-greetings
         with:
           environment_name: dev
@@ -24,6 +34,11 @@ jobs:
     runs-on: self-hosted
     needs: deploy-to-dev
     steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v6
+        with:
+          clean: false
+
       - uses: ./.github/actions/test-greetings
         with:
           environment_name: dev
@@ -32,6 +47,11 @@ jobs:
     runs-on: self-hosted
     needs: tests-on-dev
     steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v6
+        with:
+          clean: false
+
       - uses: ./.github/actions/deploy-python-greetings
         with:
           environment_name: stg
@@ -41,6 +61,11 @@ jobs:
     runs-on: self-hosted
     needs: deploy-to-stg
     steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v6
+        with:
+          clean: false
+
       - uses: ./.github/actions/test-greetings
         with:
           environment_name: stg
@@ -49,6 +74,11 @@ jobs:
     runs-on: self-hosted
     needs: tests-on-stg
     steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v6
+        with:
+          clean: false
+
       - uses: ./.github/actions/deploy-python-greetings
         with:
           environment_name: preprod
@@ -58,6 +88,11 @@ jobs:
     runs-on: self-hosted
     needs: deploy-to-preprod
     steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v6
+        with:
+          clean: false
+
       - uses: ./.github/actions/test-greetings
         with:
           environment_name: preprod
@@ -66,6 +101,11 @@ jobs:
     runs-on: self-hosted
     needs: tests-on-preprod
     steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v6
+        with:
+          clean: false
+
       - uses: ./.github/actions/deploy-python-greetings
         with:
           environment_name: prod
@@ -75,6 +115,11 @@ jobs:
     runs-on: self-hosted
     needs: deploy-to-prod
     steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v6
+        with:
+          clean: false
+
       - uses: ./.github/actions/test-greetings
         with:
           environment_name: prod
