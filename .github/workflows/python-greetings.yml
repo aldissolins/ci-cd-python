@@ -19,8 +19,12 @@ jobs:
           repository: mtararujs/python-greetings
           path: python-greetings
 
+      - name: Print install stage info
+        run: echo "Installing all required dependencies for python-greetings"
+
       - name: Install Python dependencies
         working-directory: python-greetings
+        shell: powershell
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -39,6 +43,9 @@ jobs:
           repository: mtararujs/python-greetings
           path: python-greetings
 
+      - name: Print deploy dev info
+        run: echo "Deploying application to dev environment on port 7001"
+
       - name: Stop existing dev app
         shell: powershell
         run: |
@@ -47,8 +54,10 @@ jobs:
 
       - name: Deploy to dev
         working-directory: python-greetings
+        shell: powershell
         run: |
-          pm2 start app.py --name greetings-app-dev --interpreter python -- --port 7001
+          $env:PORT=7001
+          pm2 start app.py --name greetings-app-dev --interpreter python
 
   tests-on-dev:
     runs-on: self-hosted
@@ -64,13 +73,18 @@ jobs:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
 
+      - name: Print test dev info
+        run: echo "Running tests on dev environment"
+
       - name: Install dependencies
         working-directory: course-js-api-framework
+        shell: powershell
         run: |
           npm install
 
       - name: Run tests for dev
         working-directory: course-js-api-framework
+        shell: powershell
         run: |
           npm run greetings greetings_dev
 
@@ -88,6 +102,9 @@ jobs:
           repository: mtararujs/python-greetings
           path: python-greetings
 
+      - name: Print deploy stg info
+        run: echo "Deploying application to stg environment on port 7002"
+
       - name: Stop existing stg app
         shell: powershell
         run: |
@@ -96,8 +113,10 @@ jobs:
 
       - name: Deploy to stg
         working-directory: python-greetings
+        shell: powershell
         run: |
-          pm2 start app.py --name greetings-app-stg --interpreter python -- --port 7002
+          $env:PORT=7002
+          pm2 start app.py --name greetings-app-stg --interpreter python
 
   tests-on-stg:
     runs-on: self-hosted
@@ -113,13 +132,18 @@ jobs:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
 
+      - name: Print test stg info
+        run: echo "Running tests on stg environment"
+
       - name: Install dependencies
         working-directory: course-js-api-framework
+        shell: powershell
         run: |
           npm install
 
       - name: Run tests for stg
         working-directory: course-js-api-framework
+        shell: powershell
         run: |
           npm run greetings greetings_stg
 
@@ -137,6 +161,9 @@ jobs:
           repository: mtararujs/python-greetings
           path: python-greetings
 
+      - name: Print deploy preprod info
+        run: echo "Deploying application to preprod environment on port 7003"
+
       - name: Stop existing preprod app
         shell: powershell
         run: |
@@ -145,8 +172,10 @@ jobs:
 
       - name: Deploy to preprod
         working-directory: python-greetings
+        shell: powershell
         run: |
-          pm2 start app.py --name greetings-app-preprod --interpreter python -- --port 7003
+          $env:PORT=7003
+          pm2 start app.py --name greetings-app-preprod --interpreter python
 
   tests-on-preprod:
     runs-on: self-hosted
@@ -162,13 +191,18 @@ jobs:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
 
+      - name: Print test preprod info
+        run: echo "Running tests on preprod environment"
+
       - name: Install dependencies
         working-directory: course-js-api-framework
+        shell: powershell
         run: |
           npm install
 
       - name: Run tests for preprod
         working-directory: course-js-api-framework
+        shell: powershell
         run: |
           npm run greetings greetings_preprod
 
@@ -186,6 +220,9 @@ jobs:
           repository: mtararujs/python-greetings
           path: python-greetings
 
+      - name: Print deploy prod info
+        run: echo "Deploying application to prod environment on port 7004"
+
       - name: Stop existing prod app
         shell: powershell
         run: |
@@ -194,5 +231,36 @@ jobs:
 
       - name: Deploy to prod
         working-directory: python-greetings
+        shell: powershell
         run: |
-          pm2 start app.py --name greetings-app-prod --interpreter python -- --port 7004
+          $env:PORT=7004
+          pm2 start app.py --name greetings-app-prod --interpreter python
+
+  tests-on-prod:
+    runs-on: self-hosted
+    needs: deploy-to-prod
+
+    steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v4
+
+      - name: Clone course-js-api-framework repo
+        uses: actions/checkout@v4
+        with:
+          repository: mtararujs/course-js-api-framework
+          path: course-js-api-framework
+
+      - name: Print test prod info
+        run: echo "Running tests on prod environment"
+
+      - name: Install dependencies
+        working-directory: course-js-api-framework
+        shell: powershell
+        run: |
+          npm install
+
+      - name: Run tests for prod
+        working-directory: course-js-api-framework
+        shell: powershell
+        run: |
+          npm run greetings greetings_prod
