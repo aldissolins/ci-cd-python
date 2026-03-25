@@ -57,8 +57,7 @@ jobs:
       - name: Stop old dev app
         shell: cmd
         run: |
-          pm2 delete greetings-app-dev
-          exit /b 0
+          pm2 delete greetings-app-dev >nul 2>&1 || exit /b 0
 
       - name: Create dev start script
         shell: cmd
@@ -143,8 +142,7 @@ jobs:
       - name: Stop old stg app
         shell: cmd
         run: |
-          pm2 delete greetings-app-stg
-          exit /b 0
+          pm2 delete greetings-app-stg >nul 2>&1 || exit /b 0
 
       - name: Create stg start script
         shell: cmd
@@ -229,8 +227,7 @@ jobs:
       - name: Stop old preprod app
         shell: cmd
         run: |
-          pm2 delete greetings-app-preprod
-          exit /b 0
+          pm2 delete greetings-app-preprod >nul 2>&1 || exit /b 0
 
       - name: Create preprod start script
         shell: cmd
@@ -315,8 +312,7 @@ jobs:
       - name: Stop old prod app
         shell: cmd
         run: |
-          pm2 delete greetings-app-prod
-          exit /b 0
+          pm2 delete greetings-app-prod >nul 2>&1 || exit /b 0
 
       - name: Create prod start script
         shell: cmd
