@@ -78,7 +78,7 @@ jobs:
       - name: Deploy to dev
         shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-dev.bat" --name greetings-app-dev
+          pm2 start "$env:USERPROFILE\pm2-scripts\run-dev.bat" --name greetings-app-dev --interpreter none
           Start-Sleep -Seconds 5
 
       - name: Wait for dev app
@@ -179,7 +179,7 @@ jobs:
       - name: Deploy to stg
         shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-stg.bat" --name greetings-app-stg
+          pm2 start "$env:USERPROFILE\pm2-scripts\run-stg.bat" --name greetings-app-stg --interpreter none
           Start-Sleep -Seconds 5
 
       - name: Wait for stg app
@@ -280,7 +280,7 @@ jobs:
       - name: Deploy to preprod
         shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-preprod.bat" --name greetings-app-preprod
+          pm2 start "$env:USERPROFILE\pm2-scripts\run-preprod.bat" --name greetings-app-preprod --interpreter none
           Start-Sleep -Seconds 5
 
       - name: Wait for preprod app
@@ -381,7 +381,7 @@ jobs:
       - name: Deploy to prod
         shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-prod.bat" --name greetings-app-prod
+          pm2 start "$env:USERPROFILE\pm2-scripts\run-prod.bat" --name greetings-app-prod --interpreter none
           Start-Sleep -Seconds 5
 
       - name: Wait for prod app
