@@ -61,7 +61,7 @@ jobs:
         shell: powershell
         run: |
           $env:PORT=7001
-          pm2 start app.py --name greetings-app-dev --interpreter "C:\Users\aldis\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe"
+          pm2 start py --name greetings-app-dev -- app.py
 
   tests-on-dev:
     runs-on: self-hosted
@@ -124,7 +124,7 @@ jobs:
         shell: powershell
         run: |
           $env:PORT=7002
-          pm2 start app.py --name greetings-app-stg --interpreter "C:\Users\aldis\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe"
+          pm2 start py --name greetings-app-stg -- app.py
 
   tests-on-stg:
     runs-on: self-hosted
@@ -187,7 +187,7 @@ jobs:
         shell: powershell
         run: |
           $env:PORT=7003
-          pm2 start app.py --name greetings-app-preprod --interpreter "C:\Users\aldis\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe"
+          pm2 start py --name greetings-app-preprod -- app.py
 
   tests-on-preprod:
     runs-on: self-hosted
@@ -250,7 +250,7 @@ jobs:
         shell: powershell
         run: |
           $env:PORT=7004
-          pm2 start app.py --name greetings-app-prod --interpreter "C:\Users\aldis\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe"
+          pm2 start py --name greetings-app-prod -- app.py
 
   tests-on-prod:
     runs-on: self-hosted
