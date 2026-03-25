@@ -7,7 +7,7 @@ on:
 
 jobs:
   install-pip-deps:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout main repo
@@ -28,11 +28,10 @@ jobs:
         working-directory: python-greetings
         run: |
           python -m venv venv
-          source venv/bin/activate
-          pip install -r requirements.txt
+          venv\Scripts\pip install -r requirements.txt
 
   deploy-to-dev:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: install-pip-deps
 
     steps:
@@ -45,13 +44,17 @@ jobs:
           repository: mtararujs/python-greetings
           path: python-greetings
 
+      - name: Stop existing dev app
+        run: |
+          pm2 delete greetings-app-dev || exit 0
+
       - name: Deploy to dev
         working-directory: python-greetings
         run: |
-          echo "Deploying application to dev environment"
+          pm2 start app.py --name greetings-app-dev --interpreter python -- --port 7001
 
   tests-on-dev:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: deploy-to-dev
 
     steps:
@@ -72,11 +75,10 @@ jobs:
       - name: Run tests for dev
         working-directory: course-js-api-framework
         run: |
-          npm install
-          npm run greetings greetings_dev
+          npm run greetings_dev
 
   deploy-to-stg:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: tests-on-dev
 
     steps:
@@ -89,13 +91,17 @@ jobs:
           repository: mtararujs/python-greetings
           path: python-greetings
 
+      - name: Stop existing stg app
+        run: |
+          pm2 delete greetings-app-stg || exit 0
+
       - name: Deploy to stg
         working-directory: python-greetings
         run: |
-          echo "Deploying application to stg environment"
+          pm2 start app.py --name greetings-app-stg --interpreter python -- --port 7002
 
   tests-on-stg:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: deploy-to-stg
 
     steps:
@@ -116,10 +122,10 @@ jobs:
       - name: Run tests for stg
         working-directory: course-js-api-framework
         run: |
-          npm run greetings greetings_stg
+          npm run greetings_stg
 
   deploy-to-preprod:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: tests-on-stg
 
     steps:
@@ -132,13 +138,17 @@ jobs:
           repository: mtararujs/python-greetings
           path: python-greetings
 
+      - name: Stop existing preprod app
+        run: |
+          pm2 delete greetings-app-preprod || exit 0
+
       - name: Deploy to preprod
         working-directory: python-greetings
         run: |
-          echo "Deploying application to preprod environment"
+          pm2 start app.py --name greetings-app-preprod --interpreter python -- --port 7003
 
   tests-on-preprod:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: deploy-to-preprod
 
     steps:
@@ -159,10 +169,10 @@ jobs:
       - name: Run tests for preprod
         working-directory: course-js-api-framework
         run: |
-          npm run greetings greetings_preprod
+          npm run greetings_preprod
 
   deploy-to-prod:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: tests-on-preprod
 
     steps:
@@ -175,7 +185,11 @@ jobs:
           repository: mtararujs/python-greetings
           path: python-greetings
 
+      - name: Stop existing prod app
+        run: |
+          pm2 delete greetings-app-prod || exit 0
+
       - name: Deploy to prod
         working-directory: python-greetings
         run: |
-          echo "Deploying application to production environment"
+          pm2 start app.py --name greetings-app-prod --interpreter python -- --port 7004
