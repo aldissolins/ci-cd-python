@@ -10,22 +10,15 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout main repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           clean: false
 
-      - name: Clone python-greetings repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
           clean: false
-
-      - name: Print install stage info
-        shell: powershell
-        run: |
-          Write-Host "Installing all required dependencies for python-greetings"
 
       - name: Install Python dependencies
         working-directory: python-greetings
@@ -39,78 +32,65 @@ jobs:
     needs: install-pip-deps
 
     steps:
-      - name: Checkout main repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           clean: false
 
-      - name: Clone python-greetings repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
           clean: false
 
-      - name: Print deploy dev info
-        shell: powershell
-        run: |
-          Write-Host "Deploying application to dev environment on port 7001"
-
-      - name: Stop existing dev app
+      - name: Stop old app
         shell: powershell
         run: |
           pm2 delete greetings-app-dev
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "No existing dev app to stop"
-            exit 0
-          }
+          exit 0
 
-      - name: Create dev start script
+      - name: Create start script
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
           @"
           @echo off
           cd /d "${{ github.workspace }}\python-greetings"
-          set PORT=7001
-          py app.py
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-dev.bat"
+          py -c "from app import app; app.run(host='0.0.0.0', port=7001, debug=False)"
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\dev.bat"
 
-      - name: Deploy to dev
+      - name: Start app
         shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-dev.bat" --name greetings-app-dev
-          Start-Sleep -Seconds 5
+          pm2 start "$env:USERPROFILE\pm2-scripts\dev.bat" --name greetings-app-dev
+          Start-Sleep -Seconds 10
 
   tests-on-dev:
     runs-on: self-hosted
     needs: deploy-to-dev
 
     steps:
-      - name: Checkout main repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           clean: false
 
-      - name: Clone course-js-api-framework repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
           clean: false
 
-      - name: Print test dev info
-        shell: powershell
-        run: |
-          Write-Host "Running tests on dev environment"
-
-      - name: Install dependencies
+      - name: Install deps
         working-directory: course-js-api-framework
         shell: powershell
         run: |
           npm install
 
-      - name: Run tests for dev
+      - name: Wait for app
+        shell: powershell
+        run: |
+          Start-Sleep -Seconds 5
+
+      - name: Run tests
         working-directory: course-js-api-framework
         shell: powershell
         run: |
@@ -121,81 +101,54 @@ jobs:
     needs: tests-on-dev
 
     steps:
-      - name: Checkout main repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           clean: false
 
-      - name: Clone python-greetings repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
           clean: false
 
-      - name: Print deploy stg info
-        shell: powershell
-        run: |
-          Write-Host "Deploying application to stg environment on port 7002"
-
-      - name: Stop existing stg app
-        shell: powershell
+      - shell: powershell
         run: |
           pm2 delete greetings-app-stg
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "No existing stg app to stop"
-            exit 0
-          }
+          exit 0
 
-      - name: Create stg start script
-        shell: powershell
+      - shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
           @"
           @echo off
           cd /d "${{ github.workspace }}\python-greetings"
-          set PORT=7002
-          py app.py
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-stg.bat"
+          py -c "from app import app; app.run(host='0.0.0.0', port=7002, debug=False)"
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\stg.bat"
 
-      - name: Deploy to stg
-        shell: powershell
+      - shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-stg.bat" --name greetings-app-stg
-          Start-Sleep -Seconds 5
+          pm2 start "$env:USERPROFILE\pm2-scripts\stg.bat" --name greetings-app-stg
+          Start-Sleep -Seconds 10
 
   tests-on-stg:
     runs-on: self-hosted
     needs: deploy-to-stg
 
     steps:
-      - name: Checkout main repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           clean: false
 
-      - name: Clone course-js-api-framework repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
           clean: false
 
-      - name: Print test stg info
-        shell: powershell
-        run: |
-          Write-Host "Running tests on stg environment"
-
-      - name: Install dependencies
-        working-directory: course-js-api-framework
+      - working-directory: course-js-api-framework
         shell: powershell
         run: |
           npm install
-
-      - name: Run tests for stg
-        working-directory: course-js-api-framework
-        shell: powershell
-        run: |
+          Start-Sleep -Seconds 5
           npm run greetings greetings_stg
 
   deploy-to-preprod:
@@ -203,81 +156,54 @@ jobs:
     needs: tests-on-stg
 
     steps:
-      - name: Checkout main repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           clean: false
 
-      - name: Clone python-greetings repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
           clean: false
 
-      - name: Print deploy preprod info
-        shell: powershell
-        run: |
-          Write-Host "Deploying application to preprod environment on port 7003"
-
-      - name: Stop existing preprod app
-        shell: powershell
+      - shell: powershell
         run: |
           pm2 delete greetings-app-preprod
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "No existing preprod app to stop"
-            exit 0
-          }
+          exit 0
 
-      - name: Create preprod start script
-        shell: powershell
+      - shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
           @"
           @echo off
           cd /d "${{ github.workspace }}\python-greetings"
-          set PORT=7003
-          py app.py
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-preprod.bat"
+          py -c "from app import app; app.run(host='0.0.0.0', port=7003, debug=False)"
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\preprod.bat"
 
-      - name: Deploy to preprod
-        shell: powershell
+      - shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-preprod.bat" --name greetings-app-preprod
-          Start-Sleep -Seconds 5
+          pm2 start "$env:USERPROFILE\pm2-scripts\preprod.bat" --name greetings-app-preprod
+          Start-Sleep -Seconds 10
 
   tests-on-preprod:
     runs-on: self-hosted
     needs: deploy-to-preprod
 
     steps:
-      - name: Checkout main repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           clean: false
 
-      - name: Clone course-js-api-framework repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
           clean: false
 
-      - name: Print test preprod info
-        shell: powershell
-        run: |
-          Write-Host "Running tests on preprod environment"
-
-      - name: Install dependencies
-        working-directory: course-js-api-framework
+      - working-directory: course-js-api-framework
         shell: powershell
         run: |
           npm install
-
-      - name: Run tests for preprod
-        working-directory: course-js-api-framework
-        shell: powershell
-        run: |
+          Start-Sleep -Seconds 5
           npm run greetings greetings_preprod
 
   deploy-to-prod:
@@ -285,79 +211,52 @@ jobs:
     needs: tests-on-preprod
 
     steps:
-      - name: Checkout main repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           clean: false
 
-      - name: Clone python-greetings repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
           clean: false
 
-      - name: Print deploy prod info
-        shell: powershell
-        run: |
-          Write-Host "Deploying application to prod environment on port 7004"
-
-      - name: Stop existing prod app
-        shell: powershell
+      - shell: powershell
         run: |
           pm2 delete greetings-app-prod
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "No existing prod app to stop"
-            exit 0
-          }
+          exit 0
 
-      - name: Create prod start script
-        shell: powershell
+      - shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
           @"
           @echo off
           cd /d "${{ github.workspace }}\python-greetings"
-          set PORT=7004
-          py app.py
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-prod.bat"
+          py -c "from app import app; app.run(host='0.0.0.0', port=7004, debug=False)"
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\prod.bat"
 
-      - name: Deploy to prod
-        shell: powershell
+      - shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-prod.bat" --name greetings-app-prod
-          Start-Sleep -Seconds 5
+          pm2 start "$env:USERPROFILE\pm2-scripts\prod.bat" --name greetings-app-prod
+          Start-Sleep -Seconds 10
 
   tests-on-prod:
     runs-on: self-hosted
     needs: deploy-to-prod
 
     steps:
-      - name: Checkout main repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           clean: false
 
-      - name: Clone course-js-api-framework repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
           clean: false
 
-      - name: Print test prod info
-        shell: powershell
-        run: |
-          Write-Host "Running tests on prod environment"
-
-      - name: Install dependencies
-        working-directory: course-js-api-framework
+      - working-directory: course-js-api-framework
         shell: powershell
         run: |
           npm install
-
-      - name: Run tests for prod
-        working-directory: course-js-api-framework
-        shell: powershell
-        run: |
+          Start-Sleep -Seconds 5
           npm run greetings greetings_prod
