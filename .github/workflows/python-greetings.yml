@@ -76,10 +76,10 @@ jobs:
           "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-dev.bat"
 
       - name: Deploy to dev
-        shell: powershell
+        shell: cmd
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-dev.bat" --name greetings-app-dev --interpreter none
-          Start-Sleep -Seconds 5
+          pm2 start cmd.exe --name greetings-app-dev --interpreter none -- /c "%USERPROFILE%\pm2-scripts\run-dev.bat"
+          timeout /t 5 /nobreak >nul
 
       - name: Wait for dev app
         shell: powershell
@@ -177,10 +177,10 @@ jobs:
           "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-stg.bat"
 
       - name: Deploy to stg
-        shell: powershell
+        shell: cmd
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-stg.bat" --name greetings-app-stg --interpreter none
-          Start-Sleep -Seconds 5
+          pm2 start cmd.exe --name greetings-app-stg --interpreter none -- /c "%USERPROFILE%\pm2-scripts\run-stg.bat"
+          timeout /t 5 /nobreak >nul
 
       - name: Wait for stg app
         shell: powershell
@@ -278,10 +278,10 @@ jobs:
           "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-preprod.bat"
 
       - name: Deploy to preprod
-        shell: powershell
+        shell: cmd
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-preprod.bat" --name greetings-app-preprod --interpreter none
-          Start-Sleep -Seconds 5
+          pm2 start cmd.exe --name greetings-app-preprod --interpreter none -- /c "%USERPROFILE%\pm2-scripts\run-preprod.bat"
+          timeout /t 5 /nobreak >nul
 
       - name: Wait for preprod app
         shell: powershell
@@ -379,10 +379,10 @@ jobs:
           "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-prod.bat"
 
       - name: Deploy to prod
-        shell: powershell
+        shell: cmd
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\run-prod.bat" --name greetings-app-prod --interpreter none
-          Start-Sleep -Seconds 5
+          pm2 start cmd.exe --name greetings-app-prod --interpreter none -- /c "%USERPROFILE%\pm2-scripts\run-prod.bat"
+          timeout /t 5 /nobreak >nul
 
       - name: Wait for prod app
         shell: powershell
