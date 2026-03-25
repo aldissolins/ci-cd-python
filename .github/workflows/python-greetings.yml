@@ -60,8 +60,7 @@ jobs:
         working-directory: python-greetings
         shell: powershell
         run: |
-          $env:PORT=7001
-          pm2 start py --name greetings-app-dev -- app.py
+          pm2 start cmd --name greetings-app-dev -- /c "set PORT=7001 && py app.py"
 
   tests-on-dev:
     runs-on: self-hosted
@@ -123,8 +122,7 @@ jobs:
         working-directory: python-greetings
         shell: powershell
         run: |
-          $env:PORT=7002
-          pm2 start py --name greetings-app-stg -- app.py
+          pm2 start cmd --name greetings-app-stg -- /c "set PORT=7002 && py app.py"
 
   tests-on-stg:
     runs-on: self-hosted
@@ -186,8 +184,7 @@ jobs:
         working-directory: python-greetings
         shell: powershell
         run: |
-          $env:PORT=7003
-          pm2 start py --name greetings-app-preprod -- app.py
+          pm2 start cmd --name greetings-app-preprod -- /c "set PORT=7003 && py app.py"
 
   tests-on-preprod:
     runs-on: self-hosted
@@ -249,8 +246,7 @@ jobs:
         working-directory: python-greetings
         shell: powershell
         run: |
-          $env:PORT=7004
-          pm2 start py --name greetings-app-prod -- app.py
+          pm2 start cmd --name greetings-app-prod -- /c "set PORT=7004 && py app.py"
 
   tests-on-prod:
     runs-on: self-hosted
