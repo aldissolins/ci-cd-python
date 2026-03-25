@@ -10,19 +10,25 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main repo
+        uses: actions/checkout@v4
         with:
           clean: false
 
-      - uses: actions/checkout@v4
+      - name: Clone python-greetings repo
+        uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
           clean: false
 
+      - name: Print install info
+        shell: cmd
+        run: echo Installing all required dependencies for python-greetings
+
       - name: Install Python dependencies
         working-directory: python-greetings
-        shell: powershell
+        shell: cmd
         run: |
           py -m pip install --upgrade pip
           py -m pip install -r requirements.txt
@@ -32,85 +38,84 @@ jobs:
     needs: install-pip-deps
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main repo
+        uses: actions/checkout@v4
         with:
           clean: false
 
-      - uses: actions/checkout@v4
+      - name: Clone python-greetings repo
+        uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
           clean: false
 
+      - name: Print deploy dev info
+        shell: cmd
+        run: echo Deploying application to dev environment on port 7001
+
       - name: Stop old dev app
-        shell: powershell
+        shell: cmd
         run: |
           pm2 delete greetings-app-dev
-          exit 0
+          exit /b 0
 
-      - name: Create dev script
-        shell: powershell
+      - name: Create dev start script
+        shell: cmd
         run: |
-          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
-          @"
-          Set-Location "${{ github.workspace }}\python-greetings"
-          py -c "from app import app; app.run(host='127.0.0.1', port=7001, debug=False, use_reloader=False)"
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-dev.ps1"
+          if not exist "%USERPROFILE%\pm2-scripts" mkdir "%USERPROFILE%\pm2-scripts"
+          (
+            echo @echo off
+            echo cd /d "%GITHUB_WORKSPACE%\python-greetings"
+            echo py -c "from app import app; app.run(host='127.0.0.1', port=7001, debug=False, use_reloader=False)"
+          ) > "%USERPROFILE%\pm2-scripts\run-dev.bat"
 
       - name: Start dev app
-        shell: powershell
+        shell: cmd
         run: |
-          pm2 start powershell --name greetings-app-dev --interpreter none -- -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\pm2-scripts\run-dev.ps1"
+          pm2 start "%USERPROFILE%\pm2-scripts\run-dev.bat" --name greetings-app-dev
 
-      - name: Wait for dev health check
-        shell: powershell
+      - name: Wait for dev app
+        shell: cmd
         run: |
-          $ok = $false
-          for ($i = 0; $i -lt 15; $i++) {
-            try {
-              $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7001/greetings -TimeoutSec 2
-              if ($r.StatusCode -eq 200) {
-                $ok = $true
-                break
-              }
-            } catch {}
-            Start-Sleep -Seconds 2
-          }
+          powershell -Command "$ok=$false; for($i=0; $i -lt 15; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7001/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
 
-          if (-not $ok) {
-            Write-Host "Dev app did not start."
-            pm2 describe greetings-app-dev
-            $errLog = "$env:USERPROFILE\.pm2\logs\greetings-app-dev-error.log"
-            $outLog = "$env:USERPROFILE\.pm2\logs\greetings-app-dev-out.log"
-            if (Test-Path $errLog) { Get-Content $errLog -Tail 50 }
-            if (Test-Path $outLog) { Get-Content $outLog -Tail 50 }
-            throw "Health check failed for dev"
-          }
+      - name: Show dev logs on failure
+        if: failure()
+        shell: cmd
+        run: |
+          pm2 logs greetings-app-dev --lines 50 --nostream
 
   tests-on-dev:
     runs-on: self-hosted
     needs: deploy-to-dev
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main repo
+        uses: actions/checkout@v4
         with:
           clean: false
 
-      - uses: actions/checkout@v4
+      - name: Clone course-js-api-framework repo
+        uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
           clean: false
 
-      - name: Install deps
+      - name: Print test dev info
+        shell: cmd
+        run: echo Running tests on dev environment
+
+      - name: Install dependencies
         working-directory: course-js-api-framework
-        shell: powershell
+        shell: cmd
         run: |
           npm install
 
-      - name: Run tests
+      - name: Run tests for dev
         working-directory: course-js-api-framework
-        shell: powershell
+        shell: cmd
         run: |
           npm run greetings greetings_dev
 
@@ -119,85 +124,84 @@ jobs:
     needs: tests-on-dev
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main repo
+        uses: actions/checkout@v4
         with:
           clean: false
 
-      - uses: actions/checkout@v4
+      - name: Clone python-greetings repo
+        uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
           clean: false
 
+      - name: Print deploy stg info
+        shell: cmd
+        run: echo Deploying application to stg environment on port 7002
+
       - name: Stop old stg app
-        shell: powershell
+        shell: cmd
         run: |
           pm2 delete greetings-app-stg
-          exit 0
+          exit /b 0
 
-      - name: Create stg script
-        shell: powershell
+      - name: Create stg start script
+        shell: cmd
         run: |
-          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
-          @"
-          Set-Location "${{ github.workspace }}\python-greetings"
-          py -c "from app import app; app.run(host='127.0.0.1', port=7002, debug=False, use_reloader=False)"
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-stg.ps1"
+          if not exist "%USERPROFILE%\pm2-scripts" mkdir "%USERPROFILE%\pm2-scripts"
+          (
+            echo @echo off
+            echo cd /d "%GITHUB_WORKSPACE%\python-greetings"
+            echo py -c "from app import app; app.run(host='127.0.0.1', port=7002, debug=False, use_reloader=False)"
+          ) > "%USERPROFILE%\pm2-scripts\run-stg.bat"
 
       - name: Start stg app
-        shell: powershell
+        shell: cmd
         run: |
-          pm2 start powershell --name greetings-app-stg --interpreter none -- -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\pm2-scripts\run-stg.ps1"
+          pm2 start "%USERPROFILE%\pm2-scripts\run-stg.bat" --name greetings-app-stg
 
-      - name: Wait for stg health check
-        shell: powershell
+      - name: Wait for stg app
+        shell: cmd
         run: |
-          $ok = $false
-          for ($i = 0; $i -lt 15; $i++) {
-            try {
-              $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7002/greetings -TimeoutSec 2
-              if ($r.StatusCode -eq 200) {
-                $ok = $true
-                break
-              }
-            } catch {}
-            Start-Sleep -Seconds 2
-          }
+          powershell -Command "$ok=$false; for($i=0; $i -lt 15; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7002/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
 
-          if (-not $ok) {
-            Write-Host "Stg app did not start."
-            pm2 describe greetings-app-stg
-            $errLog = "$env:USERPROFILE\.pm2\logs\greetings-app-stg-error.log"
-            $outLog = "$env:USERPROFILE\.pm2\logs\greetings-app-stg-out.log"
-            if (Test-Path $errLog) { Get-Content $errLog -Tail 50 }
-            if (Test-Path $outLog) { Get-Content $outLog -Tail 50 }
-            throw "Health check failed for stg"
-          }
+      - name: Show stg logs on failure
+        if: failure()
+        shell: cmd
+        run: |
+          pm2 logs greetings-app-stg --lines 50 --nostream
 
   tests-on-stg:
     runs-on: self-hosted
     needs: deploy-to-stg
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main repo
+        uses: actions/checkout@v4
         with:
           clean: false
 
-      - uses: actions/checkout@v4
+      - name: Clone course-js-api-framework repo
+        uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
           clean: false
 
-      - name: Install deps
+      - name: Print test stg info
+        shell: cmd
+        run: echo Running tests on stg environment
+
+      - name: Install dependencies
         working-directory: course-js-api-framework
-        shell: powershell
+        shell: cmd
         run: |
           npm install
 
-      - name: Run tests
+      - name: Run tests for stg
         working-directory: course-js-api-framework
-        shell: powershell
+        shell: cmd
         run: |
           npm run greetings greetings_stg
 
@@ -206,85 +210,84 @@ jobs:
     needs: tests-on-stg
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main repo
+        uses: actions/checkout@v4
         with:
           clean: false
 
-      - uses: actions/checkout@v4
+      - name: Clone python-greetings repo
+        uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
           clean: false
 
+      - name: Print deploy preprod info
+        shell: cmd
+        run: echo Deploying application to preprod environment on port 7003
+
       - name: Stop old preprod app
-        shell: powershell
+        shell: cmd
         run: |
           pm2 delete greetings-app-preprod
-          exit 0
+          exit /b 0
 
-      - name: Create preprod script
-        shell: powershell
+      - name: Create preprod start script
+        shell: cmd
         run: |
-          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
-          @"
-          Set-Location "${{ github.workspace }}\python-greetings"
-          py -c "from app import app; app.run(host='127.0.0.1', port=7003, debug=False, use_reloader=False)"
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-preprod.ps1"
+          if not exist "%USERPROFILE%\pm2-scripts" mkdir "%USERPROFILE%\pm2-scripts"
+          (
+            echo @echo off
+            echo cd /d "%GITHUB_WORKSPACE%\python-greetings"
+            echo py -c "from app import app; app.run(host='127.0.0.1', port=7003, debug=False, use_reloader=False)"
+          ) > "%USERPROFILE%\pm2-scripts\run-preprod.bat"
 
       - name: Start preprod app
-        shell: powershell
+        shell: cmd
         run: |
-          pm2 start powershell --name greetings-app-preprod --interpreter none -- -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\pm2-scripts\run-preprod.ps1"
+          pm2 start "%USERPROFILE%\pm2-scripts\run-preprod.bat" --name greetings-app-preprod
 
-      - name: Wait for preprod health check
-        shell: powershell
+      - name: Wait for preprod app
+        shell: cmd
         run: |
-          $ok = $false
-          for ($i = 0; $i -lt 15; $i++) {
-            try {
-              $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7003/greetings -TimeoutSec 2
-              if ($r.StatusCode -eq 200) {
-                $ok = $true
-                break
-              }
-            } catch {}
-            Start-Sleep -Seconds 2
-          }
+          powershell -Command "$ok=$false; for($i=0; $i -lt 15; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7003/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
 
-          if (-not $ok) {
-            Write-Host "Preprod app did not start."
-            pm2 describe greetings-app-preprod
-            $errLog = "$env:USERPROFILE\.pm2\logs\greetings-app-preprod-error.log"
-            $outLog = "$env:USERPROFILE\.pm2\logs\greetings-app-preprod-out.log"
-            if (Test-Path $errLog) { Get-Content $errLog -Tail 50 }
-            if (Test-Path $outLog) { Get-Content $outLog -Tail 50 }
-            throw "Health check failed for preprod"
-          }
+      - name: Show preprod logs on failure
+        if: failure()
+        shell: cmd
+        run: |
+          pm2 logs greetings-app-preprod --lines 50 --nostream
 
   tests-on-preprod:
     runs-on: self-hosted
     needs: deploy-to-preprod
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main repo
+        uses: actions/checkout@v4
         with:
           clean: false
 
-      - uses: actions/checkout@v4
+      - name: Clone course-js-api-framework repo
+        uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
           clean: false
 
-      - name: Install deps
+      - name: Print test preprod info
+        shell: cmd
+        run: echo Running tests on preprod environment
+
+      - name: Install dependencies
         working-directory: course-js-api-framework
-        shell: powershell
+        shell: cmd
         run: |
           npm install
 
-      - name: Run tests
+      - name: Run tests for preprod
         working-directory: course-js-api-framework
-        shell: powershell
+        shell: cmd
         run: |
           npm run greetings greetings_preprod
 
@@ -293,84 +296,83 @@ jobs:
     needs: tests-on-preprod
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main repo
+        uses: actions/checkout@v4
         with:
           clean: false
 
-      - uses: actions/checkout@v4
+      - name: Clone python-greetings repo
+        uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
           clean: false
 
+      - name: Print deploy prod info
+        shell: cmd
+        run: echo Deploying application to prod environment on port 7004
+
       - name: Stop old prod app
-        shell: powershell
+        shell: cmd
         run: |
           pm2 delete greetings-app-prod
-          exit 0
+          exit /b 0
 
-      - name: Create prod script
-        shell: powershell
+      - name: Create prod start script
+        shell: cmd
         run: |
-          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
-          @"
-          Set-Location "${{ github.workspace }}\python-greetings"
-          py -c "from app import app; app.run(host='127.0.0.1', port=7004, debug=False, use_reloader=False)"
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-prod.ps1"
+          if not exist "%USERPROFILE%\pm2-scripts" mkdir "%USERPROFILE%\pm2-scripts"
+          (
+            echo @echo off
+            echo cd /d "%GITHUB_WORKSPACE%\python-greetings"
+            echo py -c "from app import app; app.run(host='127.0.0.1', port=7004, debug=False, use_reloader=False)"
+          ) > "%USERPROFILE%\pm2-scripts\run-prod.bat"
 
       - name: Start prod app
-        shell: powershell
+        shell: cmd
         run: |
-          pm2 start powershell --name greetings-app-prod --interpreter none -- -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\pm2-scripts\run-prod.ps1"
+          pm2 start "%USERPROFILE%\pm2-scripts\run-prod.bat" --name greetings-app-prod
 
-      - name: Wait for prod health check
-        shell: powershell
+      - name: Wait for prod app
+        shell: cmd
         run: |
-          $ok = $false
-          for ($i = 0; $i -lt 15; $i++) {
-            try {
-              $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7004/greetings -TimeoutSec 2
-              if ($r.StatusCode -eq 200) {
-                $ok = $true
-                break
-              }
-            } catch {}
-            Start-Sleep -Seconds 2
-          }
+          powershell -Command "$ok=$false; for($i=0; $i -lt 15; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7004/greetings -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ exit 1 }"
 
-          if (-not $ok) {
-            Write-Host "Prod app did not start."
-            pm2 describe greetings-app-prod
-            $errLog = "$env:USERPROFILE\.pm2\logs\greetings-app-prod-error.log"
-            $outLog = "$env:USERPROFILE\.pm2\logs\greetings-app-prod-out.log"
-            if (Test-Path $errLog) { Get-Content $errLog -Tail 50 }
-            if (Test-Path $outLog) { Get-Content $outLog -Tail 50 }
-            throw "Health check failed for prod"
-          }
+      - name: Show prod logs on failure
+        if: failure()
+        shell: cmd
+        run: |
+          pm2 logs greetings-app-prod --lines 50 --nostream
 
   tests-on-prod:
     runs-on: self-hosted
     needs: deploy-to-prod
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main repo
+        uses: actions/checkout@v4
         with:
           clean: false
 
-      - uses: actions/checkout@v4
+      - name: Clone course-js-api-framework repo
+        uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
           clean: false
 
-      - name: Install deps
+      - name: Print test prod info
+        shell: cmd
+        run: echo Running tests on prod environment
+
+      - name: Install dependencies
         working-directory: course-js-api-framework
-        shell: powershell
+        shell: cmd
         run: |
           npm install
 
-      - name: Run tests
+      - name: Run tests for prod
         working-directory: course-js-api-framework
-        shell: powershell
+        shell: cmd
         run: |
           npm run greetings greetings_prod
