@@ -68,9 +68,10 @@ jobs:
           npm install
 
       - name: Run tests for dev
-        working-directory: course-js-api-framework
-        run: |
-          npm run greetings greetings_dev
+  	working-directory: course-js-api-framework
+  	run: |
+    	  npm install
+    	  npm run greetings greetings_dev
   deploy-to-stg:
     runs-on: ubuntu-latest
     needs: tests-on-dev
