@@ -1,0 +1,29 @@
+name: setup-python-greetings
+description: Checkout python-greetings repository and install Python dependencies
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout main repo
+      uses: actions/checkout@v6
+      with:
+        clean: false
+
+    - name: Clone python-greetings repo
+      uses: actions/checkout@v6
+      with:
+        repository: mtararujs/python-greetings
+        path: python-greetings
+        clean: false
+
+    - name: Print install stage info
+      shell: powershell
+      run: |
+        Write-Host "Installing all required dependencies for python-greetings"
+
+    - name: Install Python dependencies
+      working-directory: python-greetings
+      shell: powershell
+      run: |
+        py -m pip install --upgrade pip
+        py -m pip install -r requirements.txt

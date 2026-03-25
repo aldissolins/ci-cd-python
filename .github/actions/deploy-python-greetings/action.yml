@@ -1,0 +1,71 @@
+name: deploy-python-greetings
+description: Deploy python-greetings app to selected environment with PM2
+
+inputs:
+  environment_name:
+    description: Environment name (dev, stg, preprod, prod)
+    required: true
+  port:
+    description: Port number
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout main repo
+      uses: actions/checkout@v6
+      with:
+        clean: false
+
+    - name: Clone python-greetings repo
+      uses: actions/checkout@v6
+      with:
+        repository: mtararujs/python-greetings
+        path: python-greetings
+        clean: false
+
+    - name: Print deploy info
+      shell: powershell
+      run: |
+        Write-Host "Deploying application to ${{ inputs.environment_name }} environment on port ${{ inputs.port }}"
+
+    - name: Stop existing app
+      shell: cmd
+      run: |
+        pm2 delete greetings-app-${{ inputs.environment_name }} & set "errorlevel=0"
+
+    - name: Create start script
+      shell: powershell
+      run: |
+        New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
+        @"
+        @echo off
+        cd /d "${{ github.workspace }}\python-greetings"
+        py -c "from app import app; app.run(host='127.0.0.1', port=${{ inputs.port }}, debug=False, use_reloader=False)"
+        "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-${{ inputs.environment_name }}.bat"
+
+    - name: Deploy app
+      shell: cmd
+      run: |
+        pm2 start cmd.exe --name greetings-app-${{ inputs.environment_name }} --interpreter none -- /c "%USERPROFILE%\pm2-scripts\run-${{ inputs.environment_name }}.bat"
+        timeout /t 5 /nobreak >nul
+
+    - name: Wait for app
+      shell: powershell
+      run: |
+        $ok = $false
+        for ($i = 0; $i -lt 20; $i++) {
+          try {
+            $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:${{ inputs.port }}/greetings -TimeoutSec 2
+            if ($r.StatusCode -eq 200) {
+              $ok = $true
+              break
+            }
+          } catch {}
+          Start-Sleep -Seconds 2
+        }
+        if (-not $ok) {
+          Write-Host "${{ inputs.environment_name }} app did not start in time"
+          pm2 logs greetings-app-${{ inputs.environment_name }} --lines 50 --nostream
+          exit 1
+        }
