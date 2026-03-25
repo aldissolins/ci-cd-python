@@ -42,27 +42,50 @@ jobs:
           path: python-greetings
           clean: false
 
-      - name: Stop old app
+      - name: Stop old dev app
         shell: powershell
         run: |
           pm2 delete greetings-app-dev
           exit 0
 
-      - name: Create start script
+      - name: Create dev script
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
           @"
-          @echo off
-          cd /d "${{ github.workspace }}\python-greetings"
-          py -c "from app import app; app.run(host='0.0.0.0', port=7001, debug=False)"
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\dev.bat"
+          Set-Location "${{ github.workspace }}\python-greetings"
+          py -c "from app import app; app.run(host='127.0.0.1', port=7001, debug=False, use_reloader=False)"
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-dev.ps1"
 
-      - name: Start app
+      - name: Start dev app
         shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\dev.bat" --name greetings-app-dev
-          Start-Sleep -Seconds 10
+          pm2 start powershell --name greetings-app-dev --interpreter none -- -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\pm2-scripts\run-dev.ps1"
+
+      - name: Wait for dev health check
+        shell: powershell
+        run: |
+          $ok = $false
+          for ($i = 0; $i -lt 15; $i++) {
+            try {
+              $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7001/greetings -TimeoutSec 2
+              if ($r.StatusCode -eq 200) {
+                $ok = $true
+                break
+              }
+            } catch {}
+            Start-Sleep -Seconds 2
+          }
+
+          if (-not $ok) {
+            Write-Host "Dev app did not start."
+            pm2 describe greetings-app-dev
+            $errLog = "$env:USERPROFILE\.pm2\logs\greetings-app-dev-error.log"
+            $outLog = "$env:USERPROFILE\.pm2\logs\greetings-app-dev-out.log"
+            if (Test-Path $errLog) { Get-Content $errLog -Tail 50 }
+            if (Test-Path $outLog) { Get-Content $outLog -Tail 50 }
+            throw "Health check failed for dev"
+          }
 
   tests-on-dev:
     runs-on: self-hosted
@@ -85,11 +108,6 @@ jobs:
         run: |
           npm install
 
-      - name: Wait for app
-        shell: powershell
-        run: |
-          Start-Sleep -Seconds 5
-
       - name: Run tests
         working-directory: course-js-api-framework
         shell: powershell
@@ -111,23 +129,50 @@ jobs:
           path: python-greetings
           clean: false
 
-      - shell: powershell
+      - name: Stop old stg app
+        shell: powershell
         run: |
           pm2 delete greetings-app-stg
           exit 0
 
-      - shell: powershell
+      - name: Create stg script
+        shell: powershell
         run: |
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
           @"
-          @echo off
-          cd /d "${{ github.workspace }}\python-greetings"
-          py -c "from app import app; app.run(host='0.0.0.0', port=7002, debug=False)"
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\stg.bat"
+          Set-Location "${{ github.workspace }}\python-greetings"
+          py -c "from app import app; app.run(host='127.0.0.1', port=7002, debug=False, use_reloader=False)"
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-stg.ps1"
 
-      - shell: powershell
+      - name: Start stg app
+        shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\stg.bat" --name greetings-app-stg
-          Start-Sleep -Seconds 10
+          pm2 start powershell --name greetings-app-stg --interpreter none -- -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\pm2-scripts\run-stg.ps1"
+
+      - name: Wait for stg health check
+        shell: powershell
+        run: |
+          $ok = $false
+          for ($i = 0; $i -lt 15; $i++) {
+            try {
+              $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7002/greetings -TimeoutSec 2
+              if ($r.StatusCode -eq 200) {
+                $ok = $true
+                break
+              }
+            } catch {}
+            Start-Sleep -Seconds 2
+          }
+
+          if (-not $ok) {
+            Write-Host "Stg app did not start."
+            pm2 describe greetings-app-stg
+            $errLog = "$env:USERPROFILE\.pm2\logs\greetings-app-stg-error.log"
+            $outLog = "$env:USERPROFILE\.pm2\logs\greetings-app-stg-out.log"
+            if (Test-Path $errLog) { Get-Content $errLog -Tail 50 }
+            if (Test-Path $outLog) { Get-Content $outLog -Tail 50 }
+            throw "Health check failed for stg"
+          }
 
   tests-on-stg:
     runs-on: self-hosted
@@ -144,11 +189,16 @@ jobs:
           path: course-js-api-framework
           clean: false
 
-      - working-directory: course-js-api-framework
+      - name: Install deps
+        working-directory: course-js-api-framework
         shell: powershell
         run: |
           npm install
-          Start-Sleep -Seconds 5
+
+      - name: Run tests
+        working-directory: course-js-api-framework
+        shell: powershell
+        run: |
           npm run greetings greetings_stg
 
   deploy-to-preprod:
@@ -166,23 +216,50 @@ jobs:
           path: python-greetings
           clean: false
 
-      - shell: powershell
+      - name: Stop old preprod app
+        shell: powershell
         run: |
           pm2 delete greetings-app-preprod
           exit 0
 
-      - shell: powershell
+      - name: Create preprod script
+        shell: powershell
         run: |
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
           @"
-          @echo off
-          cd /d "${{ github.workspace }}\python-greetings"
-          py -c "from app import app; app.run(host='0.0.0.0', port=7003, debug=False)"
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\preprod.bat"
+          Set-Location "${{ github.workspace }}\python-greetings"
+          py -c "from app import app; app.run(host='127.0.0.1', port=7003, debug=False, use_reloader=False)"
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-preprod.ps1"
 
-      - shell: powershell
+      - name: Start preprod app
+        shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\preprod.bat" --name greetings-app-preprod
-          Start-Sleep -Seconds 10
+          pm2 start powershell --name greetings-app-preprod --interpreter none -- -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\pm2-scripts\run-preprod.ps1"
+
+      - name: Wait for preprod health check
+        shell: powershell
+        run: |
+          $ok = $false
+          for ($i = 0; $i -lt 15; $i++) {
+            try {
+              $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7003/greetings -TimeoutSec 2
+              if ($r.StatusCode -eq 200) {
+                $ok = $true
+                break
+              }
+            } catch {}
+            Start-Sleep -Seconds 2
+          }
+
+          if (-not $ok) {
+            Write-Host "Preprod app did not start."
+            pm2 describe greetings-app-preprod
+            $errLog = "$env:USERPROFILE\.pm2\logs\greetings-app-preprod-error.log"
+            $outLog = "$env:USERPROFILE\.pm2\logs\greetings-app-preprod-out.log"
+            if (Test-Path $errLog) { Get-Content $errLog -Tail 50 }
+            if (Test-Path $outLog) { Get-Content $outLog -Tail 50 }
+            throw "Health check failed for preprod"
+          }
 
   tests-on-preprod:
     runs-on: self-hosted
@@ -199,11 +276,16 @@ jobs:
           path: course-js-api-framework
           clean: false
 
-      - working-directory: course-js-api-framework
+      - name: Install deps
+        working-directory: course-js-api-framework
         shell: powershell
         run: |
           npm install
-          Start-Sleep -Seconds 5
+
+      - name: Run tests
+        working-directory: course-js-api-framework
+        shell: powershell
+        run: |
           npm run greetings greetings_preprod
 
   deploy-to-prod:
@@ -221,23 +303,50 @@ jobs:
           path: python-greetings
           clean: false
 
-      - shell: powershell
+      - name: Stop old prod app
+        shell: powershell
         run: |
           pm2 delete greetings-app-prod
           exit 0
 
-      - shell: powershell
+      - name: Create prod script
+        shell: powershell
         run: |
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
           @"
-          @echo off
-          cd /d "${{ github.workspace }}\python-greetings"
-          py -c "from app import app; app.run(host='0.0.0.0', port=7004, debug=False)"
-          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\prod.bat"
+          Set-Location "${{ github.workspace }}\python-greetings"
+          py -c "from app import app; app.run(host='127.0.0.1', port=7004, debug=False, use_reloader=False)"
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-prod.ps1"
 
-      - shell: powershell
+      - name: Start prod app
+        shell: powershell
         run: |
-          pm2 start "$env:USERPROFILE\pm2-scripts\prod.bat" --name greetings-app-prod
-          Start-Sleep -Seconds 10
+          pm2 start powershell --name greetings-app-prod --interpreter none -- -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\pm2-scripts\run-prod.ps1"
+
+      - name: Wait for prod health check
+        shell: powershell
+        run: |
+          $ok = $false
+          for ($i = 0; $i -lt 15; $i++) {
+            try {
+              $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:7004/greetings -TimeoutSec 2
+              if ($r.StatusCode -eq 200) {
+                $ok = $true
+                break
+              }
+            } catch {}
+            Start-Sleep -Seconds 2
+          }
+
+          if (-not $ok) {
+            Write-Host "Prod app did not start."
+            pm2 describe greetings-app-prod
+            $errLog = "$env:USERPROFILE\.pm2\logs\greetings-app-prod-error.log"
+            $outLog = "$env:USERPROFILE\.pm2\logs\greetings-app-prod-out.log"
+            if (Test-Path $errLog) { Get-Content $errLog -Tail 50 }
+            if (Test-Path $outLog) { Get-Content $outLog -Tail 50 }
+            throw "Health check failed for prod"
+          }
 
   tests-on-prod:
     runs-on: self-hosted
@@ -254,9 +363,14 @@ jobs:
           path: course-js-api-framework
           clean: false
 
-      - working-directory: course-js-api-framework
+      - name: Install deps
+        working-directory: course-js-api-framework
         shell: powershell
         run: |
           npm install
-          Start-Sleep -Seconds 5
+
+      - name: Run tests
+        working-directory: course-js-api-framework
+        shell: powershell
+        run: |
           npm run greetings greetings_prod
