@@ -12,12 +12,15 @@ jobs:
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Clone python-greetings repo
         uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
+          clean: false
 
       - name: Print install stage info
         shell: powershell
@@ -38,12 +41,15 @@ jobs:
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Clone python-greetings repo
         uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
+          clean: false
 
       - name: Print deploy dev info
         shell: powershell
@@ -54,13 +60,27 @@ jobs:
         shell: powershell
         run: |
           pm2 delete greetings-app-dev
-          if ($LASTEXITCODE -ne 0) { exit 0 }
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "No existing dev app to stop"
+            exit 0
+          }
 
-      - name: Deploy to dev
-        working-directory: python-greetings
+      - name: Create dev start script
         shell: powershell
         run: |
-          pm2 start cmd --name greetings-app-dev -- /c "set PORT=7001 && py app.py"
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
+          @"
+          @echo off
+          cd /d "${{ github.workspace }}\python-greetings"
+          set PORT=7001
+          py app.py
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-dev.bat"
+
+      - name: Deploy to dev
+        shell: powershell
+        run: |
+          pm2 start "$env:USERPROFILE\pm2-scripts\run-dev.bat" --name greetings-app-dev
+          Start-Sleep -Seconds 5
 
   tests-on-dev:
     runs-on: self-hosted
@@ -69,12 +89,15 @@ jobs:
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Clone course-js-api-framework repo
         uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
+          clean: false
 
       - name: Print test dev info
         shell: powershell
@@ -100,12 +123,15 @@ jobs:
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Clone python-greetings repo
         uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
+          clean: false
 
       - name: Print deploy stg info
         shell: powershell
@@ -116,13 +142,27 @@ jobs:
         shell: powershell
         run: |
           pm2 delete greetings-app-stg
-          if ($LASTEXITCODE -ne 0) { exit 0 }
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "No existing stg app to stop"
+            exit 0
+          }
 
-      - name: Deploy to stg
-        working-directory: python-greetings
+      - name: Create stg start script
         shell: powershell
         run: |
-          pm2 start cmd --name greetings-app-stg -- /c "set PORT=7002 && py app.py"
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
+          @"
+          @echo off
+          cd /d "${{ github.workspace }}\python-greetings"
+          set PORT=7002
+          py app.py
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-stg.bat"
+
+      - name: Deploy to stg
+        shell: powershell
+        run: |
+          pm2 start "$env:USERPROFILE\pm2-scripts\run-stg.bat" --name greetings-app-stg
+          Start-Sleep -Seconds 5
 
   tests-on-stg:
     runs-on: self-hosted
@@ -131,12 +171,15 @@ jobs:
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Clone course-js-api-framework repo
         uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
+          clean: false
 
       - name: Print test stg info
         shell: powershell
@@ -162,12 +205,15 @@ jobs:
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Clone python-greetings repo
         uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
+          clean: false
 
       - name: Print deploy preprod info
         shell: powershell
@@ -178,13 +224,27 @@ jobs:
         shell: powershell
         run: |
           pm2 delete greetings-app-preprod
-          if ($LASTEXITCODE -ne 0) { exit 0 }
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "No existing preprod app to stop"
+            exit 0
+          }
 
-      - name: Deploy to preprod
-        working-directory: python-greetings
+      - name: Create preprod start script
         shell: powershell
         run: |
-          pm2 start cmd --name greetings-app-preprod -- /c "set PORT=7003 && py app.py"
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
+          @"
+          @echo off
+          cd /d "${{ github.workspace }}\python-greetings"
+          set PORT=7003
+          py app.py
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-preprod.bat"
+
+      - name: Deploy to preprod
+        shell: powershell
+        run: |
+          pm2 start "$env:USERPROFILE\pm2-scripts\run-preprod.bat" --name greetings-app-preprod
+          Start-Sleep -Seconds 5
 
   tests-on-preprod:
     runs-on: self-hosted
@@ -193,12 +253,15 @@ jobs:
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Clone course-js-api-framework repo
         uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
+          clean: false
 
       - name: Print test preprod info
         shell: powershell
@@ -224,12 +287,15 @@ jobs:
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Clone python-greetings repo
         uses: actions/checkout@v4
         with:
           repository: mtararujs/python-greetings
           path: python-greetings
+          clean: false
 
       - name: Print deploy prod info
         shell: powershell
@@ -240,13 +306,27 @@ jobs:
         shell: powershell
         run: |
           pm2 delete greetings-app-prod
-          if ($LASTEXITCODE -ne 0) { exit 0 }
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "No existing prod app to stop"
+            exit 0
+          }
 
-      - name: Deploy to prod
-        working-directory: python-greetings
+      - name: Create prod start script
         shell: powershell
         run: |
-          pm2 start cmd --name greetings-app-prod -- /c "set PORT=7004 && py app.py"
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\pm2-scripts" | Out-Null
+          @"
+          @echo off
+          cd /d "${{ github.workspace }}\python-greetings"
+          set PORT=7004
+          py app.py
+          "@ | Set-Content "$env:USERPROFILE\pm2-scripts\run-prod.bat"
+
+      - name: Deploy to prod
+        shell: powershell
+        run: |
+          pm2 start "$env:USERPROFILE\pm2-scripts\run-prod.bat" --name greetings-app-prod
+          Start-Sleep -Seconds 5
 
   tests-on-prod:
     runs-on: self-hosted
@@ -255,12 +335,15 @@ jobs:
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Clone course-js-api-framework repo
         uses: actions/checkout@v4
         with:
           repository: mtararujs/course-js-api-framework
           path: course-js-api-framework
+          clean: false
 
       - name: Print test prod info
         shell: powershell
