@@ -20,14 +20,16 @@ jobs:
           path: python-greetings
 
       - name: Print install stage info
-        run: echo "Installing all required dependencies for python-greetings"
+        shell: powershell
+        run: |
+          Write-Host "Installing all required dependencies for python-greetings"
 
       - name: Install Python dependencies
         working-directory: python-greetings
         shell: powershell
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          py -m pip install --upgrade pip
+          py -m pip install -r requirements.txt
 
   deploy-to-dev:
     runs-on: self-hosted
@@ -44,7 +46,9 @@ jobs:
           path: python-greetings
 
       - name: Print deploy dev info
-        run: echo "Deploying application to dev environment on port 7001"
+        shell: powershell
+        run: |
+          Write-Host "Deploying application to dev environment on port 7001"
 
       - name: Stop existing dev app
         shell: powershell
@@ -57,7 +61,7 @@ jobs:
         shell: powershell
         run: |
           $env:PORT=7001
-          pm2 start app.py --name greetings-app-dev --interpreter python
+          pm2 start app.py --name greetings-app-dev --interpreter "C:\Users\aldis\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe"
 
   tests-on-dev:
     runs-on: self-hosted
@@ -74,7 +78,9 @@ jobs:
           path: course-js-api-framework
 
       - name: Print test dev info
-        run: echo "Running tests on dev environment"
+        shell: powershell
+        run: |
+          Write-Host "Running tests on dev environment"
 
       - name: Install dependencies
         working-directory: course-js-api-framework
@@ -103,7 +109,9 @@ jobs:
           path: python-greetings
 
       - name: Print deploy stg info
-        run: echo "Deploying application to stg environment on port 7002"
+        shell: powershell
+        run: |
+          Write-Host "Deploying application to stg environment on port 7002"
 
       - name: Stop existing stg app
         shell: powershell
@@ -116,7 +124,7 @@ jobs:
         shell: powershell
         run: |
           $env:PORT=7002
-          pm2 start app.py --name greetings-app-stg --interpreter python
+          pm2 start app.py --name greetings-app-stg --interpreter "C:\Users\aldis\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe"
 
   tests-on-stg:
     runs-on: self-hosted
@@ -133,7 +141,9 @@ jobs:
           path: course-js-api-framework
 
       - name: Print test stg info
-        run: echo "Running tests on stg environment"
+        shell: powershell
+        run: |
+          Write-Host "Running tests on stg environment"
 
       - name: Install dependencies
         working-directory: course-js-api-framework
@@ -162,7 +172,9 @@ jobs:
           path: python-greetings
 
       - name: Print deploy preprod info
-        run: echo "Deploying application to preprod environment on port 7003"
+        shell: powershell
+        run: |
+          Write-Host "Deploying application to preprod environment on port 7003"
 
       - name: Stop existing preprod app
         shell: powershell
@@ -175,7 +187,7 @@ jobs:
         shell: powershell
         run: |
           $env:PORT=7003
-          pm2 start app.py --name greetings-app-preprod --interpreter python
+          pm2 start app.py --name greetings-app-preprod --interpreter "C:\Users\aldis\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe"
 
   tests-on-preprod:
     runs-on: self-hosted
@@ -192,7 +204,9 @@ jobs:
           path: course-js-api-framework
 
       - name: Print test preprod info
-        run: echo "Running tests on preprod environment"
+        shell: powershell
+        run: |
+          Write-Host "Running tests on preprod environment"
 
       - name: Install dependencies
         working-directory: course-js-api-framework
@@ -221,7 +235,9 @@ jobs:
           path: python-greetings
 
       - name: Print deploy prod info
-        run: echo "Deploying application to prod environment on port 7004"
+        shell: powershell
+        run: |
+          Write-Host "Deploying application to prod environment on port 7004"
 
       - name: Stop existing prod app
         shell: powershell
@@ -234,7 +250,7 @@ jobs:
         shell: powershell
         run: |
           $env:PORT=7004
-          pm2 start app.py --name greetings-app-prod --interpreter python
+          pm2 start app.py --name greetings-app-prod --interpreter "C:\Users\aldis\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe"
 
   tests-on-prod:
     runs-on: self-hosted
@@ -251,7 +267,9 @@ jobs:
           path: course-js-api-framework
 
       - name: Print test prod info
-        run: echo "Running tests on prod environment"
+        shell: powershell
+        run: |
+          Write-Host "Running tests on prod environment"
 
       - name: Install dependencies
         working-directory: course-js-api-framework
